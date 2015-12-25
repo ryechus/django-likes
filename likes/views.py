@@ -15,7 +15,8 @@ def can_vote_test(request, content_type, object_id, vote):
     return can_vote(
         content_type.get_object_for_this_type(id=object_id),
         request.user,
-        request
+        request,
+        vote
     )
 
 
@@ -36,12 +37,15 @@ def like(request, content_type, id, vote):
         except template.TemplateDoesNotExist:
             likes_template = 'likes/inclusion_tags/likes.html'
 
+        # if vote == 0:
+        #     vote = None
+
         response = views.vote(
             request,
             content_type=content_type,
             object_id=id,
             vote=vote,
-            template_name=likes_template,
+            # template_name=likes_template,
             can_vote_test=can_vote_test,
             extra_context={
                 'likes_enabled': True,

@@ -1,3 +1,5 @@
+from logger import logger
+
 from django.contrib.contenttypes.models import ContentType
 from likes.signals import likes_enabled_test, can_vote_test
 from likes.exceptions import LikesNotEnabledException, CannotVoteException
@@ -29,15 +31,15 @@ def likes_enabled(obj, request):
     return True
 
 
-def can_vote(obj, user, request):
+def can_vote(obj, user, request, vote):
     if not _votes_enabled(obj):
         return False
-
     # Common predicate
     if Vote.objects.filter(
         object_id=obj.id,
         content_type=ContentType.objects.get_for_model(obj),
-        token=request.secretballot_token
+        token=request.secretballot_token,
+        vote=vote
     ).exists():
         return False
 
@@ -54,4 +56,23 @@ def can_vote(obj, user, request):
         )
     except CannotVoteException:
         return False
+    return True
+
+
+def has_liked(obj, user, request):
+    if not _votes_enabled(obj):
+        return False
+    # Common predicate
+    if Vote.objects.filter(
+        object_id=obj.id,
+        content_type=ContentType.objects.get_for_model(obj),
+        token=request.secretballot_token,
+        vote__lt=1
+    ).exists():
+        return False
+
+    # The middleware could not generate a token, probably bot with missing UA
+    if request.secretballot_token is None:
+        return False
+
     return True
